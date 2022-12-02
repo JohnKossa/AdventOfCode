@@ -7,32 +7,63 @@ fn main() {
     part_2();
 }
 
-fn is_win_pt_1(first: &str, second: &str) -> bool{
-    match (first, second){
-        ("A","Y") => true,
-        ("B","Z") => true,
-        ("C","X") => true,
-        (_,_)     => false
+#[derive(Clone, Copy, PartialEq)]
+enum Choice{
+    Rock,
+    Paper,
+    Scissors,
+}
+
+fn beats(first: Choice, second: Choice) -> bool{
+    match (first, second) {
+        (Choice::Rock, Choice::Scissors) => true,
+        (Choice::Scissors, Choice::Paper) => true,
+        (Choice::Paper, Choice::Rock) => true,
+        (_,_) => false
     }
 }
 
+fn get_winning_move(input:Choice) -> Choice{
+    match input {
+        Choice::Rock=> Choice::Paper,
+        Choice::Paper=> Choice::Scissors,
+        Choice::Scissors=> Choice::Rock
+    }
+}
+fn get_losing_move(input:Choice) -> Choice{
+    match input {
+        Choice::Rock=> Choice::Scissors,
+        Choice::Paper=> Choice::Rock,
+        Choice::Scissors=> Choice::Paper
+    }
+}
+fn get_draw_move(input:Choice) -> Choice{
+    input
+}
 
-
-fn is_draw_pt_1(first: &str, second: &str) -> bool{
-    match (first, second){
-        ("A","X") => true,
-        ("B","Y") => true,
-        ("C","Z") => true,
-        (_,_)     => false
+fn get_points_for_choice(input:Choice) -> i32{
+    match input {
+        Choice::Rock => 1,
+        Choice::Paper => 2,
+        Choice::Scissors => 3
     }
 }
 
-fn is_loss_pt_1(first: &str, second: &str) -> bool{
-    match (first, second){
-        ("A","Z") => true,
-        ("B","X") => true,
-        ("C","Y") => true,
-        (_,_)     => false
+fn convert_to_choice_pt1(input: &str) -> Choice{
+    match input {
+        "A" | "X" => Choice::Rock,
+        "B" | "Y" => Choice::Paper,
+        "C" | "Z" => Choice::Scissors,
+        _ => panic!()
+    }
+}
+
+fn convert_to_choice_pt2(input: &str) -> Choice{
+    match input {
+        "A" => Choice::Rock,
+        "B" => Choice::Paper,
+        "C" => Choice::Scissors,
+        _ => panic!()
     }
 }
 
@@ -57,35 +88,41 @@ fn is_loss_pt_2(second: &str) -> bool{
     }
 }
 
-fn get_win_str(first: &str) -> &str{
-    match first{
-        "A" => "B",
-        "B" => "C",
-        "C" => "A",
-        _=>panic!("Shouldn't be possible"),
-    }
-}
+fn part_2(){
+    let file_path = "files/input.txt";
+    println!("In file {}", file_path);
 
-fn get_draw_str(first: &str) -> &str{
-    first
-}
+    let contents = fs::read_to_string(file_path)
+        .expect("Should have been able to read the file");
 
-fn get_loss_str(first: &str) -> &str{
-    match first{
-        "A" => "C",
-        "B" => "A",
-        "C" => "B",
-        _=>panic!("Shouldn't be possible"),
-    }
-}
-
-fn get_point_value(choice :&str) -> i32{
-    match choice {
-        "A"=> 1,
-        "B"=> 2,
-        "C"=> 3,
-        _ => panic!("Shouldn't be possible")
-    }
+    let lines = contents.split("\n");
+    let mut total_score = 0;
+    lines.for_each(|line|{
+        if line == ""{
+            return;
+        }
+        let mut split_text = line.split(" ");
+        let first =  convert_to_choice_pt2(split_text.next().unwrap().trim());
+        let desired_result = split_text.next().unwrap().trim();
+        let mut round_score = 0;
+        match desired_result {
+            a if is_win_pt_2(a) => {
+                round_score+=6;
+                round_score+=get_points_for_choice(get_winning_move(first));
+            },
+            a if is_draw_pt_2(a) => {
+                round_score+=3;
+                round_score+=get_points_for_choice(get_draw_move(first));
+            },
+            a if is_loss_pt_2(a) => {
+                round_score+=0;
+                round_score+=get_points_for_choice(get_losing_move(first));
+            },
+            _ => panic!()
+        }
+        total_score += round_score;
+    });
+    println!("Total Score: {}", total_score);
 }
 
 fn part_1(){
@@ -102,70 +139,22 @@ fn part_1(){
             return;
         }
         let mut split_text = line.split(" ");
-        let first: &str = split_text.next().unwrap().trim();
-        let second: &str = split_text.next().unwrap().trim();
+        let first = convert_to_choice_pt1(split_text.next().unwrap().trim());
+        let second = convert_to_choice_pt1(split_text.next().unwrap().trim());
         let mut round_score = 0;
         match (first, second) {
-            (a,b) if is_win_pt_1(a, b) => {
+            (a,b) if beats(b, a) => {
                 round_score+=6;
-            },
-            (a,b) if is_draw_pt_1(a, b) => {
-                round_score+=3;
-            },
-            (a,b) if is_loss_pt_1(a, b) => {
-                round_score+=0;
-            },
-            (_,_) => {
-                println!("Invalid pattern {} {}", first, second);
-                panic!("invalid pattern 1");
-            },
-        }
-        match second {
-            "X" => round_score+=1,
-            "Y" => round_score+=2,
-            "Z" => round_score+=3,
-            _ => panic!("invalid pattern 2"),
-        }
-
-        total_score += round_score;
-    });
-    println!("Total Score: {}", total_score);
-}
-
-fn part_2(){
-    let file_path = "files/input.txt";
-    println!("In file {}", file_path);
-
-    let contents = fs::read_to_string(file_path)
-        .expect("Should have been able to read the file");
-
-    let lines = contents.split("\n");
-    let mut total_score = 0;
-    lines.for_each(|line|{
-        if line == ""{
-            return;
-        }
-        let mut split_text = line.split(" ");
-        let first: &str = split_text.next().unwrap().trim();
-        let second: &str = split_text.next().unwrap().trim();
-        let mut round_score = 0;
-        match (first, second) {
-            (a,b) if is_win_pt_2(b) => {
-                round_score+=6;
-                round_score+=get_point_value(get_win_str(a));
-            },
-            (a,b) if is_draw_pt_2(b) => {
-                round_score+=3;
-                round_score+=get_point_value(get_draw_str(a));
-            },
-            (a,b) if is_loss_pt_2(b) => {
-                round_score+=0;
-                round_score+=get_point_value(get_loss_str(a));
-            },
-            (_,_) => {
-                println!("Invalid pattern {} {}", first, second);
-                panic!("invalid pattern 1");
-            },
+                round_score+=get_points_for_choice(b);
+            }
+            (a,b) if beats(a, b) => {
+                round_score+=get_points_for_choice(b);
+            }
+            (a,b) if a==b =>{
+                round_score += 3;
+                round_score+= get_points_for_choice(b);
+            }
+            (_,_) => panic!()
         }
         total_score += round_score;
     });
