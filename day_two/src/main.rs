@@ -1,9 +1,7 @@
 use std::fs;
 
 fn main() {
-    println!("PART 1:");
     part_1();
-    println!("PART 2:");
     part_2();
 }
 
@@ -90,7 +88,6 @@ fn is_loss_pt_2(second: &str) -> bool{
 
 fn part_2(){
     let file_path = "files/input.txt";
-    println!("In file {}", file_path);
 
     let contents = fs::read_to_string(file_path)
         .expect("Should have been able to read the file");
@@ -115,19 +112,17 @@ fn part_2(){
                 round_score+=get_points_for_choice(get_draw_move(first));
             },
             a if is_loss_pt_2(a) => {
-                round_score+=0;
                 round_score+=get_points_for_choice(get_losing_move(first));
             },
             _ => panic!()
         }
         total_score += round_score;
     });
-    println!("Total Score: {}", total_score);
+    println!("Total Score for part 2: {}", total_score);
 }
 
 fn part_1(){
     let file_path = "files/input.txt";
-    println!("In file {}", file_path);
 
     let contents = fs::read_to_string(file_path)
         .expect("Should have been able to read the file");
@@ -158,5 +153,5 @@ fn part_1(){
         }
         total_score += round_score;
     });
-    println!("Total Score: {}", total_score);
+    println!("Total Score for part 1: {}", total_score);
 }
