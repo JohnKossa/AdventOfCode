@@ -20,12 +20,9 @@ fn part_1(){
     let contents = fs::read_to_string(file_path)
         .expect("Should have been able to read the file");
 
-    let lines = contents.split("\n");
+    let lines = contents.trim().split("\n");
     let mut priority_sum =0;
     lines.for_each(|line|{
-        if line == ""{
-            return;
-        }
         let str_len = line.chars().count();
         let first_string = &line[..str_len/2];
         let second_string = &line[str_len/2..];
