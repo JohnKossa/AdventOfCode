@@ -6,11 +6,11 @@ fn main() {
 }
 
 fn part_1(){
-    let file_path = "files/input.txt";
+    let file_path: &str = "files/input.txt";
     let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
 
     let lines = contents.trim().split("\n");
-    let mut total_overlaps = 0;
+    let mut total_overlaps: i32 = 0;
     lines.for_each(|line|{
         let mut assignments = line.trim().split(',');
         let first: Vec<i32> = assignments.next().unwrap().split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
@@ -25,11 +25,11 @@ fn part_1(){
 }
 
 fn part_2(){
-    let file_path = "files/input.txt";
+    let file_path: &str = "files/input.txt";
     let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
 
     let lines = contents.trim().split("\n");
-    let mut total_overlaps = 0;
+    let mut total_overlaps: i32 = 0;
     lines.for_each(|line| {
         let mut assignments = line.trim().split(',');
         let first: Vec<i32> = assignments.next().unwrap().split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
