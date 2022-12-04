@@ -12,9 +12,9 @@ fn part_1(){
     let lines = contents.trim().split("\n");
     let mut total_overlaps = 0;
     lines.for_each(|line|{
-        let assignments = line.trim().split(',').collect::<Vec<&str>>();
-        let first: Vec<i32> = assignments[0].split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
-        let second: Vec<i32> = assignments[1].split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
+        let mut assignments = line.trim().split(',');
+        let first: Vec<i32> = assignments.next().unwrap().split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
+        let second: Vec<i32> = assignments.next().unwrap().split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
         if first[0] <= second[0] && first[1]>=second[1]{
             total_overlaps += 1;
         }else if second[0] <= first[0] && second[1]>=first[1]{
@@ -31,9 +31,9 @@ fn part_2(){
     let lines = contents.trim().split("\n");
     let mut total_overlaps = 0;
     lines.for_each(|line| {
-        let assignments = line.trim().split(',').collect::<Vec<&str>>();
-        let first: Vec<i32> = assignments[0].split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
-        let second: Vec<i32> = assignments[1].split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
+        let mut assignments = line.trim().split(',');
+        let first: Vec<i32> = assignments.next().unwrap().split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
+        let second: Vec<i32> = assignments.next().unwrap().split('-').map(|part|part.parse::<i32>().unwrap()).collect::<Vec<i32>>();
         if first[0] >= second[0] && first[0] <= second[1] {
             total_overlaps += 1;
         } else if first[1] >= second[0] && first[1] <= second[1] {
