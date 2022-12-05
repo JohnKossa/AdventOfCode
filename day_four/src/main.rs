@@ -1,13 +1,14 @@
 use std::fs;
 
 fn main() {
+    let now = std::time::Instant::now();
     part_1();
     part_2();
+    println!("Execution time: {:?}", now.elapsed());
 }
 
 fn part_1(){
-    let file_path: &str = "files/input.txt";
-    let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
+    let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
 
     let lines = contents.trim().split("\n");
     let mut total_overlaps: i32 = 0;
@@ -25,8 +26,7 @@ fn part_1(){
 }
 
 fn part_2(){
-    let file_path: &str = "files/input.txt";
-    let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
+    let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
 
     let lines = contents.trim().split("\n");
     let mut total_overlaps: i32 = 0;
