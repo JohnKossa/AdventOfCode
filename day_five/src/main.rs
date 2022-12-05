@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::fs;
 
 fn main() {
@@ -8,12 +9,9 @@ fn main() {
 }
 
 fn read_initial_stacks(mut lines: Vec<&str>) -> Vec<Vec<char>>{
-    let last_line = lines.pop().unwrap();
-    let stack_count = last_line.split(' ').collect::<Vec<&str>>().pop().unwrap().parse::<i32>().unwrap();
-    let mut stacks: Vec<Vec<char>> = Vec::new();
-    for _i in 0..stack_count{
-        stacks.push(Vec::new());
-    }
+    let last_line: &str = lines.pop().unwrap();
+    let stack_count: u32 = last_line.chars().last().unwrap().to_digit(10).unwrap();
+    let mut stacks: Vec<Vec<char>> = vec![Vec::new();stack_count as usize];
     while let Some(s) = lines.pop(){
         let mut chars = s.clone().chars();
         let mut stack_num = 0;
@@ -21,7 +19,7 @@ fn read_initial_stacks(mut lines: Vec<&str>) -> Vec<Vec<char>>{
             if item != ' '{
                 stacks[stack_num].push(item)
             }
-            stack_num += 1;
+            stack_num += 1;//move on to next stack
             chars.next();//discard the blank space if there is one
         }
     }
@@ -63,9 +61,7 @@ fn process_move_2(stacks: &mut Vec<Vec<char>>, count: i32, source_idx: i32, dest
 
 fn part_1(){
     let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
-    let mut initial_split = contents.trim().split("\n\n");
-    let initial_stacks_lines = initial_split.next().unwrap();
-    let moves_lines = initial_split.next().unwrap();
+    let (initial_stacks_lines, moves_lines) = contents.trim().split("\n\n").next_tuple().unwrap();
     let mut stacks =  read_initial_stacks(initial_stacks_lines.split('\n').collect::<Vec<&str>>());
     read_moves(moves_lines.split('\n').collect::<Vec<&str>>()).into_iter().for_each(|item| process_move_1(&mut stacks, item.0, item.1, item.2));
     let mut result = "".to_owned();
@@ -77,9 +73,7 @@ fn part_1(){
 
 fn part_2(){
     let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
-    let mut initial_split = contents.trim().split("\n\n");
-    let initial_stacks_lines = initial_split.next().unwrap();
-    let moves_lines = initial_split.next().unwrap();
+    let (initial_stacks_lines, moves_lines) = contents.trim().split("\n\n").next_tuple().unwrap();
     let mut stacks =  read_initial_stacks(initial_stacks_lines.split('\n').collect::<Vec<&str>>());
     read_moves(moves_lines.split('\n').collect::<Vec<&str>>()).into_iter().for_each(|item| process_move_2(&mut stacks, item.0, item.1, item.2));
     let mut result = "".to_owned();
