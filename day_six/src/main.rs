@@ -13,11 +13,9 @@ fn test_unique(test_str: String) -> bool{
 }
 
 fn part_1(){
-    let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
-    let input_line = contents.trim();
-    for last_idx in 4..input_line.chars().count(){
-        let substr = &input_line[..last_idx+1];
-        if test_unique(substr[substr.len()-4..].to_string()){
+    let input = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
+    for last_idx in 4..input.chars().count(){
+        if test_unique(input[last_idx-4..last_idx].to_string()){
             println!("Last index for pt1 is: {}", last_idx+1);
             break;
         }
@@ -25,12 +23,9 @@ fn part_1(){
 }
 
 fn part_2(){
-    let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
-    let input_line = contents.trim();
-
-    for last_idx in 14..input_line.chars().count(){
-        let substr = &input_line[..last_idx+1];
-        if test_unique(substr[substr.len()-14..].to_string()){
+    let input = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
+    for last_idx in 14..input.chars().count(){
+        if test_unique(input[last_idx-14..last_idx].to_string()){
             println!("Last index for pt2 is: {}", last_idx+1);
             break;
         }
