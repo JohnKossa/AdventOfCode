@@ -9,7 +9,7 @@ fn main() {
 }
 
 fn test_unique(test_str: String) -> bool{
-    test_str.chars().unique().count() == test_str.chars().count()
+    test_str.chars().all_unique()
 }
 
 fn part_1(){
