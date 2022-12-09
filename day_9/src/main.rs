@@ -19,40 +19,34 @@ fn main() {
     println!("Execution time: {:?}", now.elapsed());
 }
 
-fn taxi_dist(first: (i32, i32), second: (i32, i32)) -> i32{
+type Coordinate = (i32, i32);
+
+fn taxi_dist(first: Coordinate, second: Coordinate) -> i32{
     (first.0-second.0).abs() + (first.1-second.1).abs()
 }
 
-fn move_direction(coord: &mut (i32, i32), dir: char){
+fn move_direction(coord: &mut Coordinate, dir: char){
     match dir{
         'U' => coord.1 +=1,
         'D' => coord.1 -=1,
         'L' => coord.0 -=1,
-        'R' => coord.0 += 1,
+        'R' => coord.0 +=1,
         _ => unreachable!()
     }
 }
 
-fn is_left_of(first: (i32, i32), second: (i32, i32)) -> bool{
-    first.0 < second.0
-}
+fn is_left_of(first: Coordinate, second: Coordinate) -> bool{ first.0 < second.0 }
 
-fn is_right_of(first: (i32, i32), second: (i32, i32)) -> bool{
-    first.0 > second.0
-}
+fn is_right_of(first: Coordinate, second: Coordinate) -> bool{ first.0 > second.0 }
 
-fn is_above(first: (i32, i32), second: (i32, i32)) -> bool{
-    first.1 > second.1
-}
+fn is_above(first: Coordinate, second: Coordinate) -> bool{ first.1 > second.1 }
 
-fn is_below(first: (i32, i32), second: (i32, i32)) -> bool{
-    first.1 < second.1
-}
+fn is_below(first: Coordinate, second: Coordinate) -> bool{ first.1 < second.1 }
 
 fn part_1(moves: &Vec<char>){
-    let mut tail_positions :HashSet<(i32, i32)> = HashSet::new();
-    let mut head_position = (0,0);
-    let mut tail_position = (0,0);
+    let mut tail_positions :HashSet<Coordinate> = HashSet::new();
+    let mut head_position:Coordinate = (0,0);
+    let mut tail_position:Coordinate = (0,0);
     tail_positions.insert((0,0));
     let mut moves_iter = moves.iter();
     while let Some(dir) = moves_iter.next(){
@@ -129,8 +123,8 @@ fn part_1(moves: &Vec<char>){
 
 fn part_2(moves: &Vec<char>){
     let mut moves_iter = moves.iter();
-    let mut rope_positions: Vec<(i32,i32)> = vec![(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)];
-    let mut tail_positions :HashSet<(i32, i32)> = HashSet::new();
+    let mut rope_positions: Vec<Coordinate> = Vec::from([(0,0);10]);
+    let mut tail_positions :HashSet<Coordinate> = HashSet::new();
     tail_positions.insert((0,0));
     while let Some(dir) = moves_iter.next(){
         move_direction(&mut rope_positions[0], *dir);
