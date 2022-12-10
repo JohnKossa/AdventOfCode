@@ -1,28 +1,75 @@
 use std::fs;
-use std::collections::HashSet;
 
 fn main() {
     let now = std::time::Instant::now();
-    part_1();
-    part_2();
+    let x_values = part_1();
+    part_2(x_values);
     println!("Execution time: {:?}", now.elapsed());
 }
-fn part_1(){
-    let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
-    let lines = contents.trim().split("\n");
 
-    lines.map(|line|{
-
-    });
-    println!("Result for part 1: {}", 1);
+enum Command{
+    AddX(i32),
+    Noop
 }
 
-fn part_2(){
+fn to_signal_strength(x:i32, idx: i32) -> i32{
+    x * idx
+}
+
+fn part_1() -> Vec<i32>{
     let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
     let lines = contents.trim().split("\n");
+    let command_list: Vec<Command> = lines.map(|line|line.trim().split(' ')).map(|mut tokens|{
+        match (tokens.next(), tokens.next()) {
+            (Some("noop"), None) => Command::Noop,
+            (Some("addx"), Some(i)) =>  Command::AddX(i.parse::<i32>().unwrap()),
+            _ => unreachable!()
+        }
+    }).collect();
+    let mut x_values: Vec<i32> = vec![1];
+    for cmd in command_list{
+        match cmd{
+            Command::AddX(a) => {
+                x_values.push(x_values[x_values.len()-1]);
+                x_values.push(x_values[x_values.len()-1]+a);
+            },
+            Command::Noop => {
+                x_values.push(x_values[x_values.len()-1]);
+            }
+        }
+    }
+    let mut results = Vec::new();
+    for i in [20, 60, 100, 140, 180, 220].iter(){
+        let val = x_values[i-1];
+        results.push(to_signal_strength(val, *i as i32));
+    }
+    let answer: i32 = results.iter().sum();
+    println!("Result for part 1: {:?}", answer);
+    x_values
+}
 
-    lines.map(|line|{
-
-    });
-    println!("Result for part 1: {}", 1);
+fn part_2(x_values: Vec<i32>){
+    let display_indices: Vec<i32> = (0..241).collect();
+    let display: String = display_indices.iter().map(|cycle_num|{
+        let val = x_values[*cycle_num as usize];
+        (val-(cycle_num%40)).abs() <= 1
+    }).map(|lit|{
+        match lit{
+            true => '#',
+            false => '.',
+        }
+    }).collect();
+    let line1 = &display[..40];
+    let line2 = &display[40..80];
+    let line3 = &display[80..120];
+    let line4 = &display[120..160];
+    let line5 = &display[160..200];
+    let line6 = &display[200..];
+    println!("Answer pt 2:");
+    println!("{}", line1);
+    println!("{}", line2);
+    println!("{}", line3);
+    println!("{}", line4);
+    println!("{}", line5);
+    println!("{}", line6);
 }
