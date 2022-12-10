@@ -12,17 +12,13 @@ enum Command{
     Noop
 }
 
-fn to_signal_strength(x:i32, idx: i32) -> i32{
-    x * idx
-}
-
 fn part_1() -> Vec<i32>{
-    let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
+    let contents = include_str!("../files/input.txt");
     let lines = contents.trim().split("\n");
     let command_list: Vec<Command> = lines.map(|line|line.trim().split(' ')).map(|mut tokens|{
         match (tokens.next(), tokens.next()) {
             (Some("noop"), None) => Command::Noop,
-            (Some("addx"), Some(i)) =>  Command::AddX(i.parse::<i32>().unwrap()),
+            (Some("addx"), Some(i)) => Command::AddX(i.parse::<i32>().unwrap()),
             _ => unreachable!()
         }
     }).collect();
@@ -38,12 +34,9 @@ fn part_1() -> Vec<i32>{
             }
         }
     }
-    let mut results = Vec::new();
-    for i in [20, 60, 100, 140, 180, 220].iter(){
-        let val = x_values[i-1];
-        results.push(to_signal_strength(val, *i as i32));
-    }
-    let answer: i32 = results.iter().sum();
+    let answer: i32 = [20, 60, 100, 140, 180, 220].iter().map(|i|{
+        x_values[i-1] * (*i as i32)
+    }).sum();
     println!("Result for part 1: {:?}", answer);
     x_values
 }
@@ -65,7 +58,7 @@ fn part_2(x_values: Vec<i32>){
     let line4 = &display[120..160];
     let line5 = &display[160..200];
     let line6 = &display[200..];
-    println!("Answer pt 2:");
+    println!("Result pt 2:");
     println!("{}", line1);
     println!("{}", line2);
     println!("{}", line3);
