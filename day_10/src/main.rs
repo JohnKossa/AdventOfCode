@@ -7,7 +7,7 @@ fn main() {
     part_2();
     println!("Execution time: {:?}", now.elapsed());
 }
-fn part_1(moves: &Vec<char>){
+fn part_1(){
     let contents = fs::read_to_string("files/input.txt").expect("Should have been able to read the file");
     let lines = contents.trim().split("\n");
 
