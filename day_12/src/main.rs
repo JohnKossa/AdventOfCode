@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::collections::VecDeque;
 
 fn main() {
@@ -40,7 +39,7 @@ fn main() {
 type Coordinate=(usize, usize);
 
 fn all_visited(visit_grid: &Vec<Vec<bool>>) -> bool{
-	visit_grid.iter().flatten().all(|&x|x)
+	!visit_grid.iter().flatten().any(|&x|!x)
 }
 
 fn neighbors_of(coords: Coordinate, width: usize, height: usize) -> Vec<Coordinate>{
@@ -81,11 +80,12 @@ fn part_1(height_map: &Vec<Vec<u32>>, start: Coordinate, end: Coordinate){
 		neighbors
 			.iter()
 			.for_each(|coord|{
-				visited[y][x] = true;
-				dist_map[coord.1][coord.0] = current_dist+1;
-				paths.push_back((coord.0, coord.1));
+				if !visited[coord.1][coord.0]{
+					visited[coord.1][coord.0] = true;
+					dist_map[coord.1][coord.0] = current_dist+1;
+					paths.push_back((coord.0, coord.1));
+				}
 			});
-		paths = VecDeque::from(paths.iter().unique().map(|x|*x).collect::<Vec<Coordinate>>());
 	}
 }
 
@@ -113,20 +113,17 @@ fn part_2(height_map: &Vec<Vec<u32>>, end: Coordinate){
 			})
 			.filter(|coord|{
 				let coord_height = height_map[coord.1][coord.0];
-				current_height <= coord_height|| current_height - coord_height == 1
+				current_height <= coord_height || current_height - coord_height == 1
 			})
 			.map(|x|*x).collect();
 		neighbors
 			.iter()
 			.for_each(|coord|{
-				visited[y][x] = true;
-				dist_map[coord.1][coord.0] = current_dist+1;
-				paths.push_back((coord.0, coord.1));
+				if !visited[coord.1][coord.0]{
+					visited[coord.1][coord.0] = true;
+					dist_map[coord.1][coord.0] = current_dist+1;
+					paths.push_back((coord.0, coord.1));
+				}
 			});
-		paths = VecDeque::from(paths
-			.iter()
-			.unique()
-			.map(|x|*x)
-			.collect::<Vec<Coordinate>>());
 	}
 }
