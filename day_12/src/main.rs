@@ -38,7 +38,7 @@ fn all_visited(visit_grid: &Vec<Vec<bool>>) -> bool{
     visit_grid.iter().flatten().all(|&x|x)
 }
 
-fn neighbors_of(coords: Coordinate, width: u32, height: u32) -> Vec<Coordinate>{
+fn neighbors_of(coords: Coordinate, width: usize, height: usize) -> Vec<Coordinate>{
     let mut possible_neighbors :Vec<Coordinate> = Vec::new();
     if coords.0 > 0{
         possible_neighbors.push((coords.0-1, coords.1))
@@ -72,7 +72,7 @@ fn part_1(height_map: &Vec<Vec<u32>>, start: Coordinate){
             println!("Answer for part 1: {}", current_dist);
             break;
         }
-        let mut neighbors = neighbors_of((x, y), grid_width as u32, grid_height as u32);
+        let mut neighbors = neighbors_of((x, y), grid_width, grid_height);
         neighbors = neighbors.iter().filter(|coord|{
             !visited[coord.1 ][coord.0 ]
         }).filter(|coord|{
@@ -105,7 +105,7 @@ fn part_2(height_map: &Vec<Vec<u32>>, end: Coordinate){
             println!("Answer for part 2: {}", current_dist);
             break;
         }
-        let mut neighbors = neighbors_of((x, y), grid_width as u32, grid_height as u32);
+        let mut neighbors = neighbors_of((x, y), grid_width, grid_height);
         neighbors = neighbors.iter().filter(|coord|{
             !visited[coord.1][coord.0]
         }).filter(|coord|{
