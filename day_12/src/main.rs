@@ -3,13 +3,13 @@ use std::collections::VecDeque;
 
 fn main() {
 	let now = std::time::Instant::now();
-	let contents = include_str!("../files/input.txt");
+	
+	let mut lines = include_str!("../files/input.txt")
+		.trim()
+		.split("\n");
 	let mut height_map:Vec<Vec<u32>> = Vec::new();
 	let mut start:(usize, usize) = (0,0);
 	let mut end:(usize, usize) = (0,0);
-	let mut lines = contents
-		.trim()
-		.split("\n");
 	let mut row_num: usize = 0;
 	while let Some(line) = lines.next(){
 		height_map.push(line
@@ -20,11 +20,11 @@ fn main() {
 				match (idx, c){
 					(x, 'S') => {
 						start = (x, row_num);
-						0
+						1
 					},
 					(x, 'E')=>{
 						end = (x, row_num);
-						27
+						26
 					},
 					(_,a)=>  (a as u32)-96
 				}
@@ -32,7 +32,7 @@ fn main() {
 			.collect::<Vec<u32>>());
 		row_num+=1;
 	}
-	part_1(&height_map, start);
+	part_1(&height_map, start, end);
 	part_2(&height_map, end);
 	println!("Execution time: {:?}", now.elapsed());
 }
@@ -52,7 +52,7 @@ fn neighbors_of(coords: Coordinate, width: usize, height: usize) -> Vec<Coordina
 		.collect()
 }
 
-fn part_1(height_map: &Vec<Vec<u32>>, start: Coordinate){
+fn part_1(height_map: &Vec<Vec<u32>>, start: Coordinate, end: Coordinate){
 	let grid_height = height_map.len();
 	let grid_width = height_map[0].len();
 	let mut visited:Vec<Vec<bool>> = vec![vec![false;grid_width];grid_height];
@@ -65,7 +65,7 @@ fn part_1(height_map: &Vec<Vec<u32>>, start: Coordinate){
 		let (x, y) = paths.pop_front().unwrap();
 		let current_height = height_map[y][x];
 		let current_dist = dist_map[y][x];
-		if height_map[y][x] == 27{
+		if (x,y) == end {
 			println!("Answer for part 1: {}", current_dist);
 			break;
 		}
