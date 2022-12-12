@@ -13,23 +13,23 @@ fn main() {
 	let mut row_num: usize = 0;
 	while let Some(line) = lines.next(){
 		height_map.push(line
-						.trim()
-						.chars()
-						.enumerate()
-						.map(|(idx, c)|{
-							match (idx, c){
-								(x, 'S') => {
-									start = (x, row_num);
-									0
-								},
-								(x, 'E')=>{
-									end = (x, row_num);
-									27
-								},
-								(_,a)=>  (a as u32)-96
-							}
-						})
-						.collect::<Vec<u32>>());
+			.trim()
+			.chars()
+			.enumerate()
+			.map(|(idx, c)|{
+				match (idx, c){
+					(x, 'S') => {
+						start = (x, row_num);
+						0
+					},
+					(x, 'E')=>{
+						end = (x, row_num);
+						27
+					},
+					(_,a)=>  (a as u32)-96
+				}
+			})
+			.collect::<Vec<u32>>());
 		row_num+=1;
 	}
 	part_1(&height_map, start);
@@ -130,9 +130,9 @@ fn part_2(height_map: &Vec<Vec<u32>>, end: Coordinate){
 				paths.push_back((coord.0, coord.1));
 			});
 		paths = VecDeque::from(paths
-								.iter()
-								.unique()
-								.map(|x|*x)
-								.collect::<Vec<Coordinate>>());
+			.iter()
+			.unique()
+			.map(|x|*x)
+			.collect::<Vec<Coordinate>>());
 	}
 }
