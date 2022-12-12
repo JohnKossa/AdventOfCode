@@ -98,7 +98,6 @@ fn part_2(monkeys: &mut Vec<Monkey>){
             }
         }
     }
-
     let mut top_two_mokeys: Vec<&u64> = inspect_count.values().collect();
     top_two_mokeys.sort();
     let result = top_two_mokeys[top_two_mokeys.len()-1] * top_two_mokeys[top_two_mokeys.len()-2];
