@@ -46,12 +46,8 @@ fn all_visited(visit_grid: &Vec<Vec<bool>>) -> bool{
 fn neighbors_of(coords: Coordinate, width: usize, height: usize) -> Vec<Coordinate>{
 	[(-1,0), (1,0), (0,-1), (0,1)]
 		.iter()
-		.map(|(x, y)|{
-			(coords.0 as i32 +x, coords.1 as i32+y)
-		})
-		.filter(|(x, y)|{
-			x >= &0 && x < &(width as i32) && y >= &0 && y < &(height as i32)
-		})
+		.map(|(x, y)|(coords.0 as i32 +x, coords.1 as i32+y))
+		.filter(|(x, y)|x >= &0 && x < &(width as i32) && y >= &0 && y < &(height as i32))
 		.map(|(a, b)|(a as usize, b as usize))
 		.collect()
 }
@@ -79,7 +75,9 @@ fn part_1(height_map: &Vec<Vec<u32>>, start: Coordinate){
 			.filter(|coord|{
 				let coord_height = height_map[coord.1][coord.0];
 				coord_height <= current_height || coord_height-current_height == 1
-			}).map(|x|*x).collect();
+			})
+			.map(|x|*x)
+			.collect();
 		neighbors
 			.iter()
 			.for_each(|coord|{
