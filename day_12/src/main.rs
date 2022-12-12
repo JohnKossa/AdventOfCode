@@ -44,20 +44,16 @@ fn all_visited(visit_grid: &Vec<Vec<bool>>) -> bool{
 }
 
 fn neighbors_of(coords: Coordinate, width: usize, height: usize) -> Vec<Coordinate>{
-	let mut possible_neighbors :Vec<Coordinate> = Vec::new();
-	if coords.0 > 0{
-		possible_neighbors.push((coords.0-1, coords.1))
-	}
-	if coords.0 < (width-1) as usize{
-		possible_neighbors.push((coords.0+1, coords.1))
-	}
-	if coords.1 > 0{
-		possible_neighbors.push((coords.0, coords.1-1))
-	}
-	if coords.1 < (height-1) as usize{
-		possible_neighbors.push((coords.0, coords.1+1))
-	}
-	possible_neighbors
+	[(-1,0), (1,0), (0,-1), (0,1)]
+		.iter()
+		.map(|(x, y)|{
+			(coords.0 as i32 +x, coords.1 as i32+y)
+		})
+		.filter(|(x, y)|{
+			x >= &0 && x < &(width as i32) && y >= &0 && y < &(height as i32)
+		})
+		.map(|(a, b)|(a as usize, b as usize))
+		.collect()
 }
 
 fn part_1(height_map: &Vec<Vec<u32>>, start: Coordinate){
