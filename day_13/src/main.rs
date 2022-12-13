@@ -8,48 +8,41 @@ fn main() {
     println!("Execution time: {:?}", now.elapsed());
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 enum Token{
     Value(i32),
-    List(Vec<Token>),
-    Blank,
+    List(Vec<Token>)
 }
 
 impl Token{
-    fn from_str(line: &str) -> (usize, Token) {
-        if line.is_empty() || line.starts_with("]"){
-            return (0, Token::Blank);
-        }
-        if line.chars().next().unwrap().is_ascii_digit() {
-            //found a digit, keep taking chars while we keep finding digits
-            let mut numeric_chars = line.chars();
-            let mut i = 0;
-            while numeric_chars.next().unwrap().is_ascii_digit() {
-                i += 1;
+    fn from_str(line: &str) -> Self{
+        if !line.starts_with("[") {
+            Token::Value(line.parse().unwrap())
+        } else {
+            let mut inner_packets = Vec::new();
+            let mut depth = 0;
+            let mut start = 1;
+            for i in 1..line.len() - 1 {
+                let c = line.chars().nth(i).unwrap();
+                match c {
+                    '[' => depth += 1,
+                    ']' => depth -= 1,
+                    ',' => {
+                        if depth == 0 {
+                            let inner_packet = Token::from_str(&line[start..i]);
+                            inner_packets.push(inner_packet);
+                            start = i + 1;
+                        }
+                    }
+                    _ => (),
+                }
             }
-            let value = line[0..i].parse::<i32>().unwrap();
-            return (i, Token::Value(value));
-        }
-
-        //line should start with [ here
-
-        let mut list: Vec<Token> = Vec::new();
-        let mut i: usize = 1;
-        while i < line.len() {
-            //keep parsing chunks until we run out
-            let (j, data) = Token::from_str(&line[i..]);
-            i += j;
-            list.push(data);
-            if line.chars().nth(i).unwrap() == ']' {
-                i += 1;
-                break;
+            if line.len() > 2 {
+                inner_packets.push(Token::from_str(&line[start..line.len() - 1]));
             }
-            //line[i] should be ","
-            i += 1;
+            Token::List(inner_packets)
         }
-
-        (i, Token::List(list))
-    }
+    } 
 }
 
 impl PartialEq for Token {
@@ -69,9 +62,6 @@ impl PartialOrd for Token {
 impl Ord for Token{
     fn cmp(&self, other: &Token) -> Ordering {
         match (self, other) {
-            (Token::Blank, Token::Blank) => Ordering::Equal,
-            (Token::Blank, _) => Ordering::Less,
-            (_, Token::Blank) => Ordering::Greater,
             (Token::Value(a), Token::Value(b)) => a.cmp(b),
             (Token::Value(a), Token::List(_))=>{
                 Token::List(vec![Token::Value(*a)]).cmp(other)
@@ -98,8 +88,9 @@ fn part_1(contents: &str){
     let mut pair_num = 1;
     let mut in_order_pairs: Vec<usize> = Vec::new();
     while let (Some(first_line), Some(second_line)) = (lines.next(), lines.next()){
-        let (_,first_token) = Token::from_str(first_line.trim());
-        let (_, second_token) = Token::from_str(second_line.trim());
+        let first_token = Token::from_str(first_line.trim());
+        //Token::from_str_2(first_line.trim());
+        let second_token = Token::from_str(second_line.trim());
         if first_token < second_token{
             in_order_pairs.push(pair_num);
         }
@@ -112,9 +103,9 @@ fn part_1(contents: &str){
 
 fn part_2(contents: &str){
     let lines = contents.trim().split("\n").map(|x|x.trim()).filter(|x|!x.is_empty());
-    let (_, first_extra) = Token::from_str("[[2]]");
-    let (_, second_extra) = Token::from_str("[[6]]");
-    let mut all_packets = lines.map(|line| Token::from_str(line).1).collect::<Vec<Token>>();
+    let first_extra = Token::from_str("[[2]]");
+    let second_extra = Token::from_str("[[6]]");
+    let mut all_packets = lines.map(|line| Token::from_str(line)).collect::<Vec<Token>>();
     all_packets.push(first_extra.clone());
     all_packets.push(second_extra.clone());
     all_packets.sort();
