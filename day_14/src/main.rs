@@ -1,11 +1,12 @@
 #[macro_use] extern crate scan_fmt;
-use std::collections::HashSet;
+extern crate fxhash;
+use fxhash::FxHashSet;
 
 fn main() {
     let now = std::time::Instant::now();
     let contents = include_str!("../files/input.txt");
     let lines = contents.trim().split("\n").map(|x|x.trim());
-    let mut walls: HashSet<Coordinate> = HashSet::new();
+    let mut walls: FxHashSet<Coordinate> = FxHashSet::default();
     lines.for_each(|line|{
         let segment_endpoints = line.split(" -> ").map(|str|{
             scan_fmt!(str, "{},{}", usize, usize).unwrap()
@@ -41,8 +42,8 @@ fn main() {
 
 type Coordinate = (usize, usize);
 
-fn part_1(walls: &HashSet<Coordinate>, floor_height: usize){
-    let mut rest_sand: HashSet<Coordinate> = HashSet::new();
+fn part_1(walls: &FxHashSet<Coordinate>, floor_height: usize){
+    let mut rest_sand: FxHashSet<Coordinate> = FxHashSet::default();
     let sand_origin: Coordinate = (500,0);
     let mut i = 0;
     'generate_sand: loop{
@@ -70,8 +71,8 @@ fn part_1(walls: &HashSet<Coordinate>, floor_height: usize){
     }
 }
 
-fn part_2(walls: &HashSet<Coordinate>, floor_height: usize){
-    let mut rest_sand: HashSet<Coordinate> = HashSet::new();
+fn part_2(walls: &FxHashSet<Coordinate>, floor_height: usize){
+    let mut rest_sand: FxHashSet<Coordinate> = FxHashSet::default();
     let sand_origin: Coordinate = (500,0);
     let mut count = 0;
     while !rest_sand.contains(&(500,0)){
