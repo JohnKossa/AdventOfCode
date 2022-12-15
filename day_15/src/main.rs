@@ -1,7 +1,5 @@
 #[macro_use] extern crate scan_fmt;
 use itertools::Itertools;
-extern crate fxhash;
-use fxhash::FxHashSet;
 use std::cmp::max;
 use std::cmp::min;
 
@@ -25,12 +23,12 @@ fn main() {
            ((*sx, *sy),(sx - bx).abs() + (sy - by).abs())
         })
         .collect();
-    let now1 = std::time::Instant::now();
+    //let now1 = std::time::Instant::now();
     part_1(&sensor_beacon_pairs, &sensor_clear_distances);
-    println!("Execution time 1: {:?}", now1.elapsed());
-    let now2 = std::time::Instant::now();
+    //println!("Execution time 1: {:?}", now1.elapsed());
+    //let now2 = std::time::Instant::now();
     part_2(&sensor_clear_distances);
-    println!("Execution time 2: {:?}", now2.elapsed());
+    //println!("Execution time 2: {:?}", now2.elapsed());
     println!("Execution time total: {:?}", now.elapsed());
 }
 
@@ -118,6 +116,7 @@ fn part_2(sensor_clear_distances: &Vec<(Coordinate, i32)>){
             if sensor_clear_distances
                 .iter()
                 .all(|((sx, sy), d)| (sx-min.0).abs() + (sy-min.1).abs() > *d){
+                    //println!("Unseen coord at {},{}", min.0, min.1);
                     let score :i64 = 4000000 * (min.0 as i64) + (min.1 as i64);
                     println!("Answer for part 2: {}", score);
                     return;
