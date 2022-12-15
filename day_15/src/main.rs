@@ -1,6 +1,9 @@
 #[macro_use] extern crate scan_fmt;
+use itertools::Itertools;
 extern crate fxhash;
 use fxhash::FxHashSet;
+use std::cmp::max;
+use std::cmp::min;
 
 fn main() {
     let now = std::time::Instant::now();
@@ -22,46 +25,68 @@ fn main() {
            ((*sx, *sy),(sx - bx).abs() + (sy - by).abs())
         })
         .collect();
+    let now1 = std::time::Instant::now();
     part_1(&sensor_beacon_pairs, &sensor_clear_distances);
+    println!("Execution time 1: {:?}", now1.elapsed());
+    let now2 = std::time::Instant::now();
     part_2(&sensor_clear_distances);
-    println!("Execution time: {:?}", now.elapsed());
+    println!("Execution time 2: {:?}", now2.elapsed());
+    println!("Execution time total: {:?}", now.elapsed());
 }
 
 type Coordinate = (i32, i32);
 type Square = (Coordinate, Coordinate);
 
 fn part_1(sensor_beacon_pairs: &Vec<(Coordinate, Coordinate)>, sensor_clear_distances: &Vec<(Coordinate, i32)>){
-    let min_beacon_x = sensor_clear_distances
-        .iter()
-        .map(|((x,_),d)|x-d)
-        .min()
-        .unwrap();
-    let max_beacon_x = sensor_clear_distances
-        .iter()
-        .map(|((x,_),d)|x+d)
-        .max()
-        .unwrap();
-    let y = 2000000;
-    let mut clear_locations: FxHashSet<Coordinate> = FxHashSet::default();
-    for x in min_beacon_x..=max_beacon_x{
-        //if distance to any beacon is less than that beacon's range, spot is clear
-        if sensor_clear_distances
-            .iter()
-            .map(|((sx, sy), d)| (sx-x).abs() + (sy-y).abs() <= *d).any(|x|x){
-                clear_locations.insert((x, y));
+    let search_y = 2000000;
+    //filter for sensors in range of search y
+    let relevant_sensors: Vec<(Coordinate, i32)> = sensor_clear_distances.iter().filter(|((_, sy),d)|{
+        (sy-search_y).abs() <= *d
+    }).map(|x|*x).collect();
+
+    let ranges: Vec<(i32, i32)> = relevant_sensors.iter().map(|((sx, sy), d)|{
+        let remaining_x_dist = d - (sy - search_y).abs(); //get leftover Manhattan distance
+        (sx-remaining_x_dist, sx+remaining_x_dist) //apply it to x in both directions
+    }).collect();
+
+    let mut starting_ranges = ranges.clone();
+    
+    let mut i = 0;
+    while i< starting_ranges.len(){
+        let mut merged_with: Vec<usize> = Vec::new();
+        for ii in i+1..starting_ranges.len(){
+            if starting_ranges[i].0 >= starting_ranges[ii].0 && starting_ranges[i].0 <= starting_ranges[ii].1 ||
+                starting_ranges[i].1 >= starting_ranges[ii].0 && starting_ranges[i].1 <= starting_ranges[ii].1 ||
+                starting_ranges[ii].0 >= starting_ranges[i].0 && starting_ranges[ii].0 <= starting_ranges[i].1 ||
+                starting_ranges[ii].1 >= starting_ranges[i].0 && starting_ranges[ii].0 <= starting_ranges[i].1{
+                starting_ranges[i] = (min(starting_ranges[i].0, starting_ranges[ii].0), max(starting_ranges[i].1, starting_ranges[ii].1));
+                merged_with.push(ii);
+            }
+        }
+        for idx in merged_with.iter().rev(){
+            starting_ranges.remove(*idx);
+        }
+        if merged_with.len() == 0{
+            i+=1;
         }
     }
-    let beacon_locations: Vec<Coordinate> = sensor_beacon_pairs
+    
+
+    let clear_locations: i32 = starting_ranges.iter().map(|(start, end)|1 + (end-start)).sum();
+
+    let beacon_count: usize = sensor_beacon_pairs
         .iter()
-        .filter(|(_,(_,by))|*by==y)
         .map(|(_, beacon)|*beacon)
-        .collect();
-    beacon_locations
-        .iter()
-        .for_each(|pair|{
-            clear_locations.remove(pair);
-        });
-    println!("Answer for part 1 {}", clear_locations.iter().count());
+        .unique()
+        .filter(|(_,by)|*by==search_y)
+        .filter(|(bx,_)|{
+            starting_ranges.iter().any(|(start, end)|{
+                start <= bx && end >= bx
+            })
+        })
+        .count();
+
+    println!("Answer pt 1: {}", clear_locations-beacon_count as i32);
 }
 
 fn square_can_contain_unseen(((x0, y0), (x1,y1)): Square, sensor:Coordinate, sensor_dist: i32) -> bool{
