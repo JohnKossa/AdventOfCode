@@ -38,14 +38,21 @@ type Square = (Coordinate, Coordinate);
 fn part_1(sensor_beacon_pairs: &Vec<(Coordinate, Coordinate)>, sensor_clear_distances: &Vec<(Coordinate, i32)>){
     let search_y = 2000000;
     //filter for sensors in range of search y
-    let relevant_sensors: Vec<(Coordinate, i32)> = sensor_clear_distances.iter().filter(|((_, sy),d)|{
-        (sy-search_y).abs() <= *d
-    }).map(|x|*x).collect();
+    let relevant_sensors: Vec<(Coordinate, i32)> = sensor_clear_distances
+        .iter()
+            .filter(|((_, sy),d)|{
+            (sy-search_y).abs() <= *d
+        })
+        .map(|x|*x)
+        .collect();
 
-    let ranges: Vec<(i32, i32)> = relevant_sensors.iter().map(|((sx, sy), d)|{
-        let remaining_x_dist = d - (sy - search_y).abs(); //get leftover Manhattan distance
-        (sx-remaining_x_dist, sx+remaining_x_dist) //apply it to x in both directions
-    }).collect();
+    let ranges: Vec<(i32, i32)> = relevant_sensors
+        .iter()
+        .map(|((sx, sy), d)|{
+            let remaining_x_dist = d - (sy - search_y).abs(); //get leftover Manhattan distance
+            (sx-remaining_x_dist, sx+remaining_x_dist) //apply it to x in both directions
+        })
+        .collect();
 
     let mut starting_ranges = ranges.clone();
     
@@ -70,7 +77,10 @@ fn part_1(sensor_beacon_pairs: &Vec<(Coordinate, Coordinate)>, sensor_clear_dist
     }
     
 
-    let clear_locations: i32 = starting_ranges.iter().map(|(start, end)|1 + (end-start)).sum();
+    let clear_locations: i32 = starting_ranges
+        .iter()
+        .map(|(start, end)|1 + (end-start))
+        .sum();
 
     let beacon_count: usize = sensor_beacon_pairs
         .iter()
@@ -87,7 +97,7 @@ fn part_1(sensor_beacon_pairs: &Vec<(Coordinate, Coordinate)>, sensor_clear_dist
     println!("Answer pt 1: {}", clear_locations-beacon_count as i32);
 }
 
-fn square_can_contain_unseen(((x0, y0), (x1,y1)): Square, sensor:Coordinate, sensor_dist: i32) -> bool{
+fn square_not_fully_covered(((x0, y0), (x1,y1)): Square, sensor:Coordinate, sensor_dist: i32) -> bool{
     //is the square completely covered by the sensor?
     let corners = [
         (x0, y0),
@@ -135,9 +145,11 @@ fn part_2(sensor_clear_distances: &Vec<(Coordinate, i32)>){
                     //square is inside out, stop iteration
                     continue;
                 }
-                if sensor_clear_distances.iter().all(|(pos, d)| square_can_contain_unseen(*square, *pos, *d)){
-                    //square is possible, push it to search grid
-                    search_squares.push(*square)
+                if sensor_clear_distances
+                    .iter()
+                    .all(|(pos, d)| square_not_fully_covered(*square, *pos, *d)){
+                        //square is possible, push it to search grid
+                        search_squares.push(*square)
                 }
             }
         }
