@@ -98,5 +98,5 @@ fn part_2(walls: &FxHashSet<Coordinate>, floor_height: usize){
             }
         }
     }
-    println!("Answer for pt2 {}", count);
+    println!("Answer for part 2 {}", count);
 }
