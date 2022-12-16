@@ -36,7 +36,7 @@ fn dist_from_recurse(start: &'static str, end: &str, valves: &HashMap<&str, Valv
     if start_valve.connected_valves.contains(&end){
         return 1;
     }
-    visited.insert(start);
+    //visited.insert(start);
     let unvisited_children: Vec<&str> = start_valve.connected_valves.iter().filter(|&name|!visited.contains(name)).map(|x|*x).collect();
     return 1 + unvisited_children.iter().map(|name|dist_from_recurse(name, end, valves, visited)).min().unwrap_or(0)
 }
@@ -51,7 +51,19 @@ fn key_list_to_opening_history(key_list: Vec<&'static str>, valves: &HashMap<&st
     let mut current_position = "AA";
     let mut current_turn = 30;
     let mut to_return = HashMap::new();
-    for key in &key_list{
+    let mut iter_keys = key_list.iter();
+    while let Some(key) = iter_keys.next(){
+        let turn_cost = dist_from(current_position, key, valves)+1;
+        if turn_cost > current_turn{
+            //can't get there and open the valve in time, break
+            println!("broke early for {:?}", &key_list);
+            break;
+        }
+        to_return.insert(*key, current_turn - turn_cost);
+        current_turn -= turn_cost;
+        current_position = key;
+    }
+    /*for key in &key_list{
         let turn_cost = dist_from(current_position, key, valves)+1;
         if turn_cost > current_turn{
             //can't get there and open the valve in time, break
@@ -61,7 +73,7 @@ fn key_list_to_opening_history(key_list: Vec<&'static str>, valves: &HashMap<&st
         to_return.insert(*key, 30 - dist_from(current_position, key, valves) - 1);
         current_turn -= dist_from(current_position, key, valves) + 1;
         current_position = key;
-    }
+    }*/
     to_return
 }
 
@@ -132,7 +144,8 @@ fn part_1(){
     expected_values_2.sort_by(|(_, v1), (_,v2)| v2.partial_cmp(v1).unwrap());
     println!("Expected values rd2 {:?}", expected_values_2);*/
 
-
+    let dist_db = dist_from("DD", "BB", &valves);
+    println!("Distance from DD to BB is  {}", dist_aj);
     let non_zero_valve_keys: Vec<&str> = valves.iter().filter(|(k, v)|v.flow_rate > 0).map(|(k,_v)|*k).collect();
     let permutations = non_zero_valve_keys.iter().permutations(non_zero_valve_keys.len()).unique();
     let mut histories: Vec<(_,HashMap<&str, i32>)> = permutations.map(|p|{
@@ -145,10 +158,17 @@ fn part_1(){
     for hist in &histories{
         println!("{:?}", hist);
     }
-
-    for score in &scores{
+    let dist_ad = dist_from("AA", "DD", &valves);
+    println!("Distance from AA to DD is  {}", dist_ad);
+    let dist_db = dist_from("DD", "BB", &valves);
+    println!("Distance from DD to BB is  {}", dist_db);
+    let dist_bj = dist_from("BB", "JJ", &valves);
+    println!("Distance from BB to JJ is  {}", dist_bj);
+    let dist_jh = dist_from("JJ", "HH", &valves);
+    println!("Distance from JJ to HH is  {}", dist_jh);
+    /*for score in &scores{
         println!("{:?}", score);
-    }
+    }*/
     //println!("scores {:?}", scores);
     let max_score = scores.iter().map(|(p, s)|s).max().unwrap();
     println!("Answer 1: {}", max_score);
