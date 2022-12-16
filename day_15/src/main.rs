@@ -23,13 +23,17 @@ fn main() {
            ((*sx, *sy),(sx - bx).abs() + (sy - by).abs())
         })
         .collect();
-    //let now1 = std::time::Instant::now();
+    let tstamp_parse = now.elapsed();
+    let now1 = std::time::Instant::now();
     part_1(&sensor_beacon_pairs, &sensor_clear_distances);
-    //println!("Execution time 1: {:?}", now1.elapsed());
-    //let now2 = std::time::Instant::now();
+    let tstamp_pt1 = now1.elapsed();
+    let now2 = std::time::Instant::now();
     part_2(&sensor_clear_distances);
-    //println!("Execution time 2: {:?}", now2.elapsed());
-    println!("Execution time total: {:?}", now.elapsed());
+    let tstamp_pt2 = now2.elapsed();
+    println!("        Parse time: {:?}", tstamp_parse);
+    println!("        Execution time 1: {:?}", tstamp_pt1);
+    println!("        Execution time 2: {:?}", tstamp_pt2);
+    println!("        Execution time total: {:?}", now.elapsed());
 }
 
 type Coordinate = (i32, i32);
@@ -40,7 +44,7 @@ fn part_1(sensor_beacon_pairs: &Vec<(Coordinate, Coordinate)>, sensor_clear_dist
     //filter for sensors in range of search y
     let relevant_sensors: Vec<(Coordinate, i32)> = sensor_clear_distances
         .iter()
-            .filter(|((_, sy),d)|{
+        .filter(|((_, sy),d)|{
             (sy-search_y).abs() <= *d
         })
         .map(|x|*x)
@@ -94,7 +98,7 @@ fn part_1(sensor_beacon_pairs: &Vec<(Coordinate, Coordinate)>, sensor_clear_dist
         })
         .count();
 
-    println!("Answer pt 1: {}", clear_locations-beacon_count as i32);
+    println!("Answer 1: {}", clear_locations-beacon_count as i32);
 }
 
 fn square_not_fully_covered(((x0, y0), (x1,y1)): Square, sensor:Coordinate, sensor_dist: i32) -> bool{
@@ -128,7 +132,7 @@ fn part_2(sensor_clear_distances: &Vec<(Coordinate, i32)>){
                 .all(|((sx, sy), d)| (sx-min.0).abs() + (sy-min.1).abs() > *d){
                     //println!("Unseen coord at {},{}", min.0, min.1);
                     let score :i64 = 4000000 * (min.0 as i64) + (min.1 as i64);
-                    println!("Answer for part 2: {}", score);
+                    println!("Answer 2: {}", score);
                     return;
             }
         }else{

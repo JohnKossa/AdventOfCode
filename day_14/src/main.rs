@@ -35,9 +35,17 @@ fn main() {
         };
     });
     let floor_height = 2 + *(walls.iter().map(|(_, y)|y).max().unwrap());
+    let tstamp_parse = now.elapsed();
+    let now1 = std::time::Instant::now();
     part_1(&walls, floor_height);
+    let tstamp_pt1 = now1.elapsed();
+    let now2 = std::time::Instant::now();
     part_2(&walls, floor_height);
-    println!("Execution time: {:?}", now.elapsed());
+    let tstamp_pt2 = now2.elapsed();
+    println!("        Parse time: {:?}", tstamp_parse);
+    println!("        Execution time 1: {:?}", tstamp_pt1);
+    println!("        Execution time 2: {:?}", tstamp_pt2);
+    println!("        Execution time total: {:?}", now.elapsed());
 }
 
 type Coordinate = (usize, usize);
