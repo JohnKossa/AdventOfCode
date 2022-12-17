@@ -2,102 +2,39 @@
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use rayon::prelude::*;
 
-fn main() {
-    let now = std::time::Instant::now();
-    //let tstamp_parse = now.elapsed();
-    let now1 = std::time::Instant::now();
-    part_1();
-    let tstamp_pt1 = now1.elapsed();
-    let now2 = std::time::Instant::now();
-    part_2();
-    let tstamp_pt2 = now2.elapsed();
-    //println!("        Parse time: {:?}", tstamp_parse);
-    println!("        Execution time 1: {:?}", tstamp_pt1);
-    println!("        Execution time 2: {:?}", tstamp_pt2);
-    println!("        Execution time total: {:?}", now.elapsed());
-}
+type ValveKey = &'static str;
+type Path = Vec<ValveKey>;
+type ValveMap = HashMap<ValveKey, Valve>;
+type ValveDistMap = HashMap<String, u32>;
+type PathHistory = HashMap<ValveKey, i32>;
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 struct Valve{
     flow_rate: i32,
-    connected_valves: Vec<&'static str>
+    connected_valves: Vec<ValveKey>
 }
 
-fn dist_from(start: &'static str, end: &str, valves: &HashMap<&str, Valve>) -> i32{
-    dist_from_recurse(start, end, valves, &mut HashSet::new())
-}
-
-fn dist_from_recurse(start: &'static str, end: &str, valves: &HashMap<&str, Valve>, visited: &mut HashSet<&str>) -> i32{
-    let start_valve = valves.get(start).unwrap();
-    if start == end{
-        return 0;
-    }
-    if start_valve.connected_valves.contains(&end){
-        return 1;
-    }
-    //visited.insert(start);
-    let unvisited_children: Vec<&str> = start_valve.connected_valves.iter().filter(|&name|!visited.contains(name)).map(|x|*x).collect();
-    return 1 + unvisited_children.iter().map(|name|dist_from_recurse(name, end, valves, visited)).min().unwrap_or(0)
-}
-
-//key, opened_on map
-
-fn path_value(key_turn_map: &HashMap<&str, i32>, valves: &HashMap<&str, Valve>)->i32{
-    key_turn_map.iter().map(|(key, turn)|valves.get(key).unwrap().flow_rate * turn).sum()
-}
-
-fn key_list_to_opening_history(key_list: Vec<&'static str>, valves: &HashMap<&str, Valve>) -> HashMap<&'static str, i32>{
-    let mut current_position = "AA";
-    let mut current_turn = 30;
-    let mut to_return = HashMap::new();
-    let mut iter_keys = key_list.iter();
-    while let Some(key) = iter_keys.next(){
-        let turn_cost = dist_from(current_position, key, valves)+1;
-        if turn_cost > current_turn{
-            //can't get there and open the valve in time, break
-            println!("broke early for {:?}", &key_list);
-            break;
-        }
-        to_return.insert(*key, current_turn - turn_cost);
-        current_turn -= turn_cost;
-        current_position = key;
-    }
-    /*for key in &key_list{
-        let turn_cost = dist_from(current_position, key, valves)+1;
-        if turn_cost > current_turn{
-            //can't get there and open the valve in time, break
-            println!("broke early for {:?}", &key_list);
-            break;
-        }
-        to_return.insert(*key, 30 - dist_from(current_position, key, valves) - 1);
-        current_turn -= dist_from(current_position, key, valves) + 1;
-        current_position = key;
-    }*/
-    to_return
-}
-
-/*fn dfs_search(minute: u32, current_location: &str, flow_rate: i32, current_score: u64, open_vlocation_history: Vec<&str>) -> Option<u64>{
-    if minute == 0{
-        return Some(current_score)
-    }
-}*/
-
-fn part_1(){
-    //let contents = include_str!("../files/input.txt");
-    let contents = include_str!("../files/sample.txt");
+fn main() {
+    let now = std::time::Instant::now();
+    let contents = include_str!("../files/input.txt");
+    //let contents = include_str!("../files/input2.txt");
+    //let contents = include_str!("../files/input3.txt");
+    //let contents = include_str!("../files/input4.txt");
+    //let contents = include_str!("../files/sample.txt");
     let lines = contents
         .trim()
         .split("\n")
         .map(|x|x.trim());
-    let mut valves: HashMap<&str, Valve> = HashMap::new();
+    let mut valves: ValveMap = HashMap::new();
     lines.for_each(|line|{
         let mut splits = line.split(" ");
         let name = splits.nth(1).unwrap();
         splits.next();
         splits.next();
         let flow_rate = scan_fmt!(splits.next().unwrap(), "rate={};", i32).unwrap();
-        let mut connected_valves: Vec<&str> = Vec::new();
+        let mut connected_valves: Vec<ValveKey> = Vec::new();
         splits.next();
         splits.next();
         splits.next();
@@ -111,87 +48,277 @@ fn part_1(){
             connected_valves
         });
     });
-    println!("Valves {:?}", valves);
 
-    let valve_id_mappings: Vec<(usize, &str)> = valves.keys().enumerate().map(|(i, &k)|(i,k)).collect();
-    println!("valve id mappings {:?}", valve_id_mappings);
+    let tstamp_parse = now.elapsed();
+    let now1 = std::time::Instant::now();
+    part_1(&valves);
+    let tstamp_pt1 = now1.elapsed();
+    let now2 = std::time::Instant::now();
+    part_2(&valves);
+    let tstamp_pt2 = now2.elapsed();
 
-    let valve_count = valves.len();
+    println!("        Parse time: {:?}", tstamp_parse);
+    println!("        Execution time 1: {:?}", tstamp_pt1);
+    println!("        Execution time 2: {:?}", tstamp_pt2);
+    println!("        Execution time total: {:?}", now.elapsed());
+}
 
-    let inf = i32::max_value();
-    let dist_aj = dist_from("AA", "JJ", &valves);
-    println!("Distance from AA to JJ is  {}", dist_aj);
-    /*let mut curr_postition: &str = "AA";
-    let mut open_valves: Vec<&str> = Vec::new();
-    let mut open_valve_history: HashMap<&str, i32> = HashMap::new();
-    let mut time_remaining = 30;
-    let all_valves: Vec<&str> = valves.keys().map(|x|*x).collect();
-    let mut expected_values_1:Vec<(&str, i32)> = valves.iter().map(|(key, valve)|{
-        //expected value is flowrate * (time_remaining-dist-1)
-        (*key, valve.flow_rate * (time_remaining-1-dist_from(curr_postition, key, &valves)))
-    }).filter(|(_k,v)|*v!=0).collect();
-    expected_values_1.sort_by(|(_, v1), (_,v2)| v2.partial_cmp(v1).unwrap());
-    println!("Expected values rd1 {:?}", expected_values_1);
+fn part_1(valves: &ValveMap){
+    let mut all_path_keys: Vec<ValveKey>= valves
+                                            .iter()
+                                            .filter(|(_k,v)|v.flow_rate!=0)
+                                            .map(|(k, _v)|*k)
+                                            .collect();
+    all_path_keys.push("AA");
+    let valve_distances: ValveDistMap = all_path_keys
+                                            .iter()
+                                            .permutations(2)
+                                            .map(|pair| {
+                                                ((pair[0].to_string()+","+pair[1]).to_string(), dist_from(pair[0], pair[1],&valves) as u32)
+                                            })
+                                            .collect();
+    //println!("Valve distances {:?}", valve_distances);
 
-    time_remaining -= (1+ dist_from(curr_postition, expected_values_1[0].0, &valves));
-    curr_postition = expected_values_1[0].0;
-    open_valve_history.insert(expected_values_1[0].0, (1+ dist_from(curr_postition, expected_values_1[0].0, &valves)));
-    println!("score after rd1 {}", path_value(&open_valve_history, &valves));
-    let mut expected_values_2:Vec<(&str, i32)> = valves.iter().filter(|(k,v)|!open_valve_history.contains_key(*k)).map(|(key, valve)|{
-        //expected value is flowrate * (time_remaining-dist-1)
-        (*key, valve.flow_rate * (time_remaining-1-dist_from(curr_postition, key, &valves)))
-    }).filter(|(_k,v)|*v!=0).collect();
-    expected_values_2.sort_by(|(_, v1), (_,v2)| v2.partial_cmp(v1).unwrap());
-    println!("Expected values rd2 {:?}", expected_values_2);*/
+    let non_zero_valve_keys: Vec<ValveKey> = valves
+                                                .iter()
+                                                .filter(|(_k, v)|v.flow_rate > 0)
+                                                .map(|(k,_v)|*k)
+                                                .collect();
 
-    let dist_db = dist_from("DD", "BB", &valves);
-    println!("Distance from DD to BB is  {}", dist_aj);
-    let non_zero_valve_keys: Vec<&str> = valves.iter().filter(|(k, v)|v.flow_rate > 0).map(|(k,_v)|*k).collect();
-    let permutations = non_zero_valve_keys.iter().permutations(non_zero_valve_keys.len()).unique();
-    let mut histories: Vec<(_,HashMap<&str, i32>)> = permutations.map(|p|{
-        (p.iter().map(|x|*x).join(","), key_list_to_opening_history(p.iter().map(|x|**x).collect(), &valves))
-    }).collect::<Vec<(_,HashMap<&str, i32>)>>();
-    histories.sort_by(|(h1, s1), (h2, s2)| h1.partial_cmp(h2).unwrap());
-    let mut scores: Vec<(_, i32)> = histories.iter().map(|(p,h)|(p, path_value(&h, &valves))).collect();
-    //scores.sort_by(|(h1, s1), (h2, s2)| s2.partial_cmp(s1).unwrap());
-    scores.sort_by(|(h1, s1), (h2, s2)| h1.partial_cmp(h2).unwrap());
-    for hist in &histories{
-        println!("{:?}", hist);
+    //try building paths up from the bottom
+    let non_zero_key_count = non_zero_valve_keys.len();
+    let mut cost_cache: HashMap<Path, u32> = HashMap::new();
+    non_zero_valve_keys.iter().for_each(|key|{
+        let path_cost = path_cost_with_cache(vec![key], &valve_distances, &cost_cache);
+        if path_cost < 30{
+            cost_cache.insert(vec![key], path_cost);
+        }
+    });
+    for i in 1..non_zero_key_count{
+        let cost_cache_copy = cost_cache.clone();
+        let valid_paths = cost_cache_copy.keys().filter(|path|path.len()==i).collect::<Vec<_>>();
+        valid_paths.iter().for_each(|path|{
+            non_zero_valve_keys.iter().for_each(|key|{
+                if path.iter().all(|x|x!=key) {
+                    let mut new_path = Vec::from(path.as_slice());// path.iter().map(|x|*x).collect::<Vec<&str>>();
+                    new_path.push(key);
+                    let path_cost = path_cost_with_cache(new_path.to_vec(), &valve_distances, &cost_cache);
+                    if path_cost < 30 {
+                        cost_cache.insert(new_path.to_vec(), path_cost);
+                    }
+                }
+            });
+        })
     }
-    let dist_ad = dist_from("AA", "DD", &valves);
-    println!("Distance from AA to DD is  {}", dist_ad);
-    let dist_db = dist_from("DD", "BB", &valves);
-    println!("Distance from DD to BB is  {}", dist_db);
-    let dist_bj = dist_from("BB", "JJ", &valves);
-    println!("Distance from BB to JJ is  {}", dist_bj);
-    let dist_jh = dist_from("JJ", "HH", &valves);
-    println!("Distance from JJ to HH is  {}", dist_jh);
-    /*for score in &scores{
-        println!("{:?}", score);
-    }*/
-    //println!("scores {:?}", scores);
-    let max_score = scores.iter().map(|(p, s)|s).max().unwrap();
+    let valid_permutations = cost_cache.keys().collect::<Vec<_>>();
+    println!("Pt1: {} unique paths", valid_permutations.len());
+    let max_score = valid_permutations
+        .into_par_iter()
+        .map(|perm|{
+            permutation_to_score(&(perm.iter().map(|x|*x).collect()), &valves, &valve_distances)
+        })
+        .max()
+        .unwrap();
+
     println!("Answer 1: {}", max_score);
-
-
-
-
-
-    //1 minute per move
-    //1 minute per open
-    //score = time at open * flow_rate
-
-    //get dist from any to any with matrix multiplication
-    //expected value = (time_remaining - time_to_reach)* flow_rate
-
-    //start at aa
-
-
-    //let time = 30;
-    //let score = 0;
-    //println!("Answer 1: {}", 1);
 }
 
-fn part_2(){
-    println!("Answer 2: {}", 2);
+fn part_2(valves: &ValveMap){
+    //create a list of all valves that are either the start node or a nonzero flow rate
+    let mut all_path_nodes: Vec<ValveKey>= valves
+                                            .iter()
+                                            .filter(|(_k,v)|v.flow_rate!=0)
+                                            .map(|(k, _v)|*k)
+                                            .collect();
+    all_path_nodes.push("AA");
+
+    //create a map of all possible travel distances from path nodes
+    let valve_distances: ValveDistMap = all_path_nodes
+        .iter()
+        .permutations(2)
+        .map(|pair| {
+            let new_key = (pair[0].to_string()+","+pair[1]).to_string();
+            (new_key, dist_from(pair[0], pair[1], &valves) as u32)
+        })
+        .collect();
+    //println!("Valve distances {:?}", valve_distances);
+
+    //create a map of all nodes with a nonzero flow rate (Excludes the entrance: AA)
+    let non_zero_valve_keys: Vec<ValveKey> = valves
+                                                .iter()
+                                                .filter(|(_k, v)|v.flow_rate > 0)
+                                                .map(|(k,_v)|*k)
+                                                .collect();
+    let non_zero_key_count = non_zero_valve_keys.len();
+
+    //Build paths from the bottom up, starting with single node paths
+    let mut cost_cache: HashMap<Path, u32> = HashMap::new();
+    //populate initial target destinations
+    non_zero_valve_keys.iter().for_each(|key|{
+        let path_cost = path_cost_with_cache(vec![key], &valve_distances, &cost_cache);
+        if path_cost < 26{
+            cost_cache.insert(vec![key], path_cost);
+        }
+    });
+    //for each destination in the chain, add each other destination as a possible path
+    for i in 1..non_zero_key_count{
+        let cost_cache_copy = cost_cache.clone(); //create a clone to prevent multi-borrowing
+        let valid_paths = cost_cache_copy
+                            .keys()
+                            .filter(|path|path.len()==i)
+                            .collect::<Vec<_>>(); //find all "full" paths, excluding any that terminated in an earlier iteration of the loop
+        valid_paths.iter().for_each(|path|{
+            non_zero_valve_keys.iter().for_each(|key|{
+                //if this path contains the current key, skip it
+                if path.iter().all(|x|x!=key) {
+                    let mut new_path = Vec::from(path.as_slice()); //create a new path vector that we will insert
+                    new_path.push(key); //add the key to the path
+                    let path_cost = path_cost_with_cache(new_path.to_vec(), &valve_distances, &cost_cache); //get the total cost of the path
+                    if path_cost < 26 {
+                        //if it's over 26, we can't hit all those nodes
+                        //if it's equal to 26, the last valve is turned on on the last day and doesn't contribute to the score
+                        //otherwise save the path into our costs object
+                        cost_cache.insert(new_path.to_vec(), path_cost);
+                    }
+                }
+            });
+        })
+    }
+    let valid_permutations: Vec<&Path> = cost_cache.keys().collect(); //keys of this object are the paths
+    println!("Pt2: {} unique paths", valid_permutations.len());
+    let path_pairs: Vec<Vec<&&Path>> = valid_permutations
+                                        .iter()
+                                        .permutations(2)
+                                        .collect::<Vec<_>>().into_par_iter()
+                                        .filter(|pair|{
+                                            //if the pair of paths contains duplicate paths, it cannot be a correct diestination, so exclude it
+                                            let mut set_of_valves = HashSet::new();
+                                            pair[0].iter().for_each(|name|{set_of_valves.insert(name);});
+                                            pair[1].iter().for_each(|name|{set_of_valves.insert(name);});
+                                            set_of_valves.len() == (pair[0].len() + pair[1].len())
+                                        })
+                                        .collect();
+    println!("Pt2: {} unique permutations with elephant", path_pairs.len());
+    println!("now for the hard part...again");
+    let answer_2 = path_pairs
+                    .into_par_iter()
+                    .map(|pair| merge_path_scores(pair[0], pair[1], &valves, &valve_distances)) //merge the path histories and calculate scores
+                    .max()
+                    .unwrap();
+
+    println!("Answer 2: {}", answer_2);
 }
+
+fn dist_from(start: ValveKey, end: ValveKey, valves: &ValveMap) -> i32{
+    dist_from_recurse(start, end, valves, &mut HashSet::new())
+}
+
+fn dist_from_recurse(start: ValveKey, end: ValveKey, valves: &ValveMap, visited: &mut HashSet<ValveKey>) -> i32{
+    let start_valve = valves.get(start).unwrap();
+    if start == end{
+        return 0;
+    }
+    //this check isn't necessary, but it speeds up the recursion a bit
+    if start_valve.connected_valves.contains(&end){
+        return 1;
+    }
+    visited.insert(start); //so children don't loop back to parents
+    let unvisited_children: Vec<ValveKey> = start_valve.connected_valves
+                                                            .iter()
+                                                            .filter(|&name|!visited.contains(name))
+                                                            .map(|x|*x)
+                                                            .collect();
+    return 1 + unvisited_children
+                .iter()
+                .map(|name|dist_from_recurse(name, end, valves, visited))
+                .min()
+                .unwrap_or(99999)
+}
+
+fn path_cost_with_cache(mut path: Path, valve_distances: &ValveDistMap, cache: &HashMap<Vec<ValveKey>, u32>) -> u32{
+    let path_length = path.len();
+    if path_length == 1{
+        return valve_distances
+                .get(format!("{},{}","AA", path[0]).as_str())
+                .unwrap() + 1;
+    }
+    if cache.contains_key(&path[0..path.len()-1]){
+        cache.get(&path[0..path.len()-1]).unwrap() + valve_distances.get(format!("{},{}", path[path_length -2], path[path_length -1]).as_str()).expect(format!("{},{}", path[path_length -2], path[path_length -1]).as_str()) + 1
+    }else {
+        let mut full_path = vec!["AA"];
+        full_path.append(&mut path);
+        let path_segments = full_path.windows(2);
+        path_segments.map(|path| {
+            valve_distances.get(format!("{},{}", path[0], path[1]).as_str()).unwrap() + 1
+        }).sum()
+    }
+}
+
+fn path_value(history: &PathHistory, valves: &ValveMap) ->i32{
+    history
+        .iter()
+        .map(|(key, turn)|{
+            valves.get(key).unwrap().flow_rate * turn
+        })
+        .sum()
+}
+
+fn path_to_path_history(key_list: Path, valve_distances: &ValveDistMap) -> PathHistory{
+    let mut current_position = "AA";
+    let mut current_turn = 30;
+    let mut to_return = HashMap::new();
+    let mut iter_keys = key_list.iter();
+    while let Some(key) = iter_keys.next(){
+        let turn_cost = *(valve_distances.get(format!("{},{}", current_position, key).as_str()).unwrap()) as i32 + 1;
+        if turn_cost > current_turn{
+            //can't get there and open the valve in time, break
+            break;
+        }
+        to_return.insert(*key, current_turn - turn_cost);
+        current_turn -= turn_cost;
+        current_position = key;
+    }
+    to_return
+}
+
+fn path_to_path_history_2(key_list: Path, valve_distances: &ValveDistMap) -> PathHistory{
+    let mut current_position = "AA";
+    let mut current_turn = 26;
+    let mut to_return = HashMap::new();
+    let mut iter_keys = key_list.iter();
+    while let Some(key) = iter_keys.next(){
+        let turn_cost = *(valve_distances.get(format!("{},{}", current_position, key).as_str()).unwrap()) as i32 + 1;
+        if turn_cost > current_turn{
+            //can't get there and open the valve in time, break
+            break;
+        }
+        to_return.insert(*key, current_turn - turn_cost);
+        current_turn -= turn_cost;
+        current_position = key;
+    }
+    to_return
+}
+
+fn permutation_to_score(permutation: &Path, valves: &ValveMap, valve_distances: &ValveDistMap) -> i32{
+    let history: HashMap<ValveKey, i32>  = path_to_path_history(permutation.iter().map(|x|*x).collect(), valve_distances);
+    let score = path_value(&history, &valves);
+    score
+}
+
+fn merge_path_scores(path1: &Path, path2: &Path, valves: &ValveMap, valve_distances: &ValveDistMap) -> i32{
+    let history_1 = path_to_path_history_2(path1.iter().map(|x|*x).collect(), &valve_distances);
+    let history_2 = path_to_path_history_2(path2.iter().map(|x|*x).collect(), &valve_distances);
+    let mut combined_history:  HashMap<ValveKey, i32> = history_1.clone();
+    history_2.iter().for_each(|(label, turn)|{
+        match combined_history.get(label){
+            None => {
+                //this should always be the case, otherwise, panic
+                combined_history.insert(label, *turn);
+            },
+            _ => panic!("both tried to open same valve")
+        }
+    });
+    path_value(&combined_history, &valves)
+}
+
+
