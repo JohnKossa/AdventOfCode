@@ -1,15 +1,16 @@
 #[macro_use] extern crate scan_fmt;
 use itertools::Itertools;
-use std::collections::HashMap;
-use std::collections::HashSet;
+extern crate fxhash;
+use fxhash::FxHashSet;
+use fxhash::FxHashMap;
 use std::collections::VecDeque;
 use rayon::prelude::*;
 
 type ValveKey = &'static str;
 type Path = Vec<ValveKey>;
-type ValveMap = HashMap<ValveKey, Valve>;
-type ValveDistMap = HashMap<String, u32>;
-type PathHistory = HashMap<ValveKey, i32>;
+type ValveMap = FxHashMap<ValveKey, Valve>;
+type ValveDistMap = FxHashMap<String, u32>;
+type PathHistory = FxHashMap<ValveKey, i32>;
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 struct Valve{
@@ -20,15 +21,11 @@ struct Valve{
 fn main() {
     let now = std::time::Instant::now();
     let contents = include_str!("../files/input.txt");
-    //let contents = include_str!("../files/input2.txt");
-    //let contents = include_str!("../files/input3.txt");
-    //let contents = include_str!("../files/input4.txt");
-    //let contents = include_str!("../files/sample.txt");
     let lines = contents
         .trim()
         .split("\n")
         .map(|x|x.trim());
-    let mut valves: ValveMap = HashMap::new();
+    let mut valves: ValveMap = FxHashMap::default();
     lines.for_each(|line|{
         let mut splits = line.split(" ");
         let name = splits.nth(1).unwrap();
@@ -76,7 +73,7 @@ fn part_1(valves: &ValveMap){
                                             .iter()
                                             .permutations(2)
                                             .map(|pair| {
-                                                ((pair[0].to_string()+","+pair[1]).to_string(), dist_from(pair[0], pair[1],&valves) as u32)
+                                                ((pair[0].to_string()+","+pair[1]).to_string(), dist_from(pair[0], pair[1], &valves) as u32)
                                             })
                                             .collect();
     //println!("Valve distances {:?}", valve_distances);
@@ -89,7 +86,7 @@ fn part_1(valves: &ValveMap){
 
     //try building paths up from the bottom
     let non_zero_key_count = non_zero_valve_keys.len();
-    let mut cost_cache: HashMap<Path, u32> = HashMap::new();
+    let mut cost_cache: FxHashMap<Path, u32> = FxHashMap::default();
     non_zero_valve_keys.iter().for_each(|key|{
         let path_cost = path_cost_with_cache(vec![key], &valve_distances, &cost_cache);
         if path_cost < time_limit as u32{
@@ -114,7 +111,7 @@ fn part_1(valves: &ValveMap){
         })
     }
     let valid_permutations = cost_cache.keys().collect::<Vec<_>>();
-    println!("Pt1: {} unique paths", valid_permutations.len());
+    //println!("Pt1: {} unique paths", valid_permutations.len());
     let max_score = valid_permutations
         .into_par_iter()
         .map(|perm|{
@@ -149,7 +146,6 @@ fn part_2(valves: &ValveMap){
         })
         .collect();
 
-    //println!("valve distances {:?}", valve_distances);
     //println!("Valve distances {:?}", valve_distances);
 
     //create a map of all nodes with a nonzero flow rate (Excludes the entrance: AA)
@@ -161,7 +157,7 @@ fn part_2(valves: &ValveMap){
     let non_zero_key_count = non_zero_valve_keys.len();
 
     //Build paths from the bottom up, starting with single node paths
-    let mut cost_cache: HashMap<Path, u32> = HashMap::new();
+    let mut cost_cache: FxHashMap<Path, u32> = FxHashMap::default();
     //populate initial target destinations
     non_zero_valve_keys.iter().for_each(|key|{
         let path_cost = path_cost_with_cache(vec![key], &valve_distances, &cost_cache);
@@ -195,34 +191,38 @@ fn part_2(valves: &ValveMap){
         })
     }
     let valid_permutations: Vec<&Path> = cost_cache.keys().collect(); //keys of this object are the paths
-    println!("Pt2: {} unique paths", valid_permutations.len());
-    let path_pairs: Vec<Vec<&&Path>> = valid_permutations
-                                        .iter()
-                                        .permutations(2)//FIXME this line here is the cause of all the slowdowns in the program
-                                        .filter(|pair|{
-                                            //if the pair of paths contains duplicate paths, it cannot be correct, so exclude it
-                                            let mut set_of_valves = HashSet::new();
-                                            pair[0].iter().for_each(|name|{set_of_valves.insert(name);});
-                                            pair[1].iter().for_each(|name|{set_of_valves.insert(name);});
-                                            set_of_valves.len() == (pair[0].len() + pair[1].len())
-                                        })
-                                        .collect();
-    println!("Pt2: {} unique permutations with elephant", path_pairs.len());
-    println!("now for the hard part...again");
+    //println!("Pt2: {} unique paths", valid_permutations.len());
+
+    let path_pairs: Vec<(&Path, &Path)> = valid_permutations
+        .clone()
+        .into_par_iter()
+        .map(|path|{
+            valid_permutations
+                .iter()
+                .filter(|&path2|{
+                    //if the pair of paths contains duplicate paths, it cannot be correct, so exclude it
+                    path.iter().all(|node| !path2.contains(node))
+                })
+                .map(|path2|(path, *path2))
+                .collect::<Vec<(&Path, &Path)>>()
+        })
+        .flatten()
+        .collect();
+
+
+    //println!("Pt2: {} unique permutations with elephant", path_pairs.len());
+    //println!("now for the hard part...again");
+
     let answer_2 = path_pairs
-                    .into_par_iter()
-                    .map(|pair| permutation_to_score(pair[0], &valves, &valve_distances, time_limit) + permutation_to_score(pair[1], &valves, &valve_distances, time_limit)) //merge the path histories and calculate scores
-                    .max()
-                    .unwrap();
+        .into_par_iter()
+        .map(|pair| permutation_to_score(pair.0, &valves, &valve_distances, time_limit) + permutation_to_score(pair.1, &valves, &valve_distances, time_limit)) //merge the path histories and calculate scores
+        .max()
+        .unwrap();
 
     println!("Answer 2: {}", answer_2);
 }
 
 fn dist_from(start: ValveKey, end: ValveKey, valves: &ValveMap) -> i32{
-    dist_from_iterative(start, end, valves)
-}
-
-fn dist_from_iterative(start: ValveKey, end: ValveKey, valves: &ValveMap) -> i32{
     let start_valve = valves.get(start).unwrap();
     if start == end{
         return 0;
@@ -233,7 +233,7 @@ fn dist_from_iterative(start: ValveKey, end: ValveKey, valves: &ValveMap) -> i32
     }
 
     let mut process_queue:VecDeque<(ValveKey, i32)> = VecDeque::new();
-    let mut visited: HashSet<ValveKey> = HashSet::new();
+    let mut visited: FxHashSet<ValveKey> = FxHashSet::default();
     process_queue.push_back((start, 0));
     while let Some((current_node, depth)) = process_queue.pop_front(){
         if current_node == end{
@@ -253,7 +253,7 @@ fn dist_from_iterative(start: ValveKey, end: ValveKey, valves: &ValveMap) -> i32
     return 99999;
 }
 
-fn path_cost_with_cache(mut path: Path, valve_distances: &ValveDistMap, cache: &HashMap<Vec<ValveKey>, u32>) -> u32{
+fn path_cost_with_cache(mut path: Path, valve_distances: &ValveDistMap, cache: &FxHashMap<Vec<ValveKey>, u32>) -> u32{
     let path_length = path.len();
     if path_length == 1{
         //return 1 + distance from AA to the only path node
@@ -290,7 +290,7 @@ fn path_value(history: &PathHistory, valves: &ValveMap) ->i32{
 fn path_to_path_history(key_list: Path, valve_distances: &ValveDistMap, time_limit: i32) -> PathHistory{
     let mut current_position = "AA";
     let mut current_turn = time_limit;
-    let mut to_return = HashMap::new();
+    let mut to_return = FxHashMap::default();
     let mut iter_keys = key_list.iter();
     while let Some(key) = iter_keys.next(){
         let turn_cost = *(valve_distances.get(format!("{},{}", current_position, key).as_str()).unwrap()) as i32 + 1;
@@ -306,7 +306,7 @@ fn path_to_path_history(key_list: Path, valve_distances: &ValveDistMap, time_lim
 }
 
 fn permutation_to_score(permutation: &Path, valves: &ValveMap, valve_distances: &ValveDistMap, time_limit: i32) -> i32{
-    let history: HashMap<ValveKey, i32>  = path_to_path_history(permutation.iter().map(|x|*x).collect(), valve_distances, time_limit);
+    let history: FxHashMap<ValveKey, i32>  = path_to_path_history(permutation.iter().map(|x|*x).collect(), valve_distances, time_limit);
     let score = path_value(&history, &valves);
     score
 }
