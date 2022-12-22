@@ -2,6 +2,7 @@
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::VecDeque;
 use rayon::prelude::*;
 
 type ValveKey = &'static str;
@@ -133,7 +134,7 @@ fn part_2(valves: &ValveMap){
     //create a list of all valves that are either the start node or a nonzero flow rate
     let mut all_path_nodes: Vec<ValveKey>= valves
                                             .iter()
-                                            .filter(|(_k,v)|v.flow_rate!=0)
+                                            .filter(|(_k,v)|v.flow_rate > 0)
                                             .map(|(k, _v)|*k)
                                             .collect();
     all_path_nodes.push("AA");
@@ -147,6 +148,8 @@ fn part_2(valves: &ValveMap){
             (new_key, dist_from(pair[0], pair[1], &valves) as u32)
         })
         .collect();
+
+    //println!("valve distances {:?}", valve_distances);
     //println!("Valve distances {:?}", valve_distances);
 
     //create a map of all nodes with a nonzero flow rate (Excludes the entrance: AA)
@@ -195,10 +198,9 @@ fn part_2(valves: &ValveMap){
     println!("Pt2: {} unique paths", valid_permutations.len());
     let path_pairs: Vec<Vec<&&Path>> = valid_permutations
                                         .iter()
-                                        .permutations(2)
-                                        .collect::<Vec<_>>().into_par_iter()
+                                        .permutations(2)//FIXME this line here is the cause of all the slowdowns in the program
                                         .filter(|pair|{
-                                            //if the pair of paths contains duplicate paths, it cannot be a correct diestination, so exclude it
+                                            //if the pair of paths contains duplicate paths, it cannot be correct, so exclude it
                                             let mut set_of_valves = HashSet::new();
                                             pair[0].iter().for_each(|name|{set_of_valves.insert(name);});
                                             pair[1].iter().for_each(|name|{set_of_valves.insert(name);});
@@ -217,10 +219,10 @@ fn part_2(valves: &ValveMap){
 }
 
 fn dist_from(start: ValveKey, end: ValveKey, valves: &ValveMap) -> i32{
-    dist_from_recurse(start, end, valves, &mut HashSet::new())
+    dist_from_iterative(start, end, valves)
 }
 
-fn dist_from_recurse(start: ValveKey, end: ValveKey, valves: &ValveMap, visited: &mut HashSet<ValveKey>) -> i32{
+fn dist_from_iterative(start: ValveKey, end: ValveKey, valves: &ValveMap) -> i32{
     let start_valve = valves.get(start).unwrap();
     if start == end{
         return 0;
@@ -229,29 +231,44 @@ fn dist_from_recurse(start: ValveKey, end: ValveKey, valves: &ValveMap, visited:
     if start_valve.connected_valves.contains(&end){
         return 1;
     }
-    visited.insert(start); //so children don't loop back to parents
-    let unvisited_children: Vec<ValveKey> = start_valve.connected_valves
-                                                            .iter()
-                                                            .filter(|&name|!visited.contains(name))
-                                                            .map(|x|*x)
-                                                            .collect();
-    return 1 + unvisited_children
-                .iter()
-                .map(|name|dist_from_recurse(name, end, valves, visited))
-                .min()
-                .unwrap_or(99999)
+
+    let mut process_queue:VecDeque<(ValveKey, i32)> = VecDeque::new();
+    let mut visited: HashSet<ValveKey> = HashSet::new();
+    process_queue.push_back((start, 0));
+    while let Some((current_node, depth)) = process_queue.pop_front(){
+        if current_node == end{
+            return depth;
+        }else if valves.get(current_node).unwrap().connected_valves.contains(&end){
+            //not technically needed, but should speed up recursion
+            return depth+1;
+        }else{
+            visited.insert(current_node);
+            valves.get(current_node).unwrap().connected_valves.iter().for_each(|name|{
+                if !visited.contains(name){
+                    process_queue.push_back((name, 1+depth));
+                }
+            });
+        }
+    }
+    return 99999;
 }
 
 fn path_cost_with_cache(mut path: Path, valve_distances: &ValveDistMap, cache: &HashMap<Vec<ValveKey>, u32>) -> u32{
     let path_length = path.len();
     if path_length == 1{
+        //return 1 + distance from AA to the only path node
         return valve_distances
-                .get(format!("{},{}","AA", path[0]).as_str())
+                .get(format!("AA,{}", path[0]).as_str())
                 .unwrap() + 1;
     }
     if cache.contains_key(&path[0..path.len()-1]){
-        cache.get(&path[0..path.len()-1]).unwrap() + valve_distances.get(format!("{},{}", path[path_length -2], path[path_length -1]).as_str()).expect(format!("{},{}", path[path_length -2], path[path_length -1]).as_str()) + 1
-    }else {
+        //cache hit
+        //return 1 + previous path cost + distance to last valve
+        1 + cache.get(&path[0..path.len()-1]).unwrap() + valve_distances.get(format!("{},{}", path[path_length -2], path[path_length -1]).as_str()).unwrap()
+    } else {
+        //cache miss, shouldn't be possible
+        //if we get here somehow, append AA to the front of path and get distances between all path pairs
+        //sum them up and return result
         let mut full_path = vec!["AA"];
         full_path.append(&mut path);
         let path_segments = full_path.windows(2);
